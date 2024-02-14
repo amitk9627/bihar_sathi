@@ -1,36 +1,37 @@
 const Users = require("../model/user.js");
 const createUser = async (req, res) => {
-  const body = req.body;
+  const requestBody = req.body;
   const requiredFields = ["name", "email", "password"];
   for (let key of requiredFields) {
-    if (!body[key]) {
+    if (!requestBody[key]) {
       return res.json({
         message: `Missing or null value of ${key}`,
       });
     }
   }
+
   const { email, password, name } = req.body;
   const user = {
-    email,
-    password,
-    name,
+    name:name,
+    email:email,
+    password:password,
   };
   try {
+    // add  user
     const result = await Users.create(user);
-    if (!result) {
-      return res.status(404).json({
-        message: `User created successfully`,
-      });
-    }
-    return res.json({
-      message: "User Can't created",
+    console.log("User Created successfully");
+    res.json({
+      status:true,
+      message: "User created successfully",
+      res: result,
     });
-  } catch {
+  } catch (e) {
     res.status(500).json({
       message: "Internal Server Error",
     });
   }
 };
+
 const loginUser = async (req, res) => {
   const body = req.body;
   const requiredFields = ["name", "email"];
@@ -49,17 +50,19 @@ const loginUser = async (req, res) => {
   try {
     const result = await Users.findOne({ email: email });
     if (!result) {
-      return res.status(404).json({
-        message: `User created successfully`,
+      return res.json({
+        status: false,
+        message: "User Can't found",
       });
     }
-    if(result.password!==password){
+    if (result.password !== password) {
       return res.status(401).json({
-        message: `User password not match`,
+        status: true,
+        message: `Worng password`,
       });
     }
-    return res.json({
-      message: "User Can't found",
+    return res.status(404).json({
+      message: `User created successfully`,
     });
   } catch {
     res.status(500).json({
@@ -68,8 +71,16 @@ const loginUser = async (req, res) => {
   }
 };
 const forgetUser = async (req, res) => {
+  const { email, newpassword } = req.body;
+  const userFound = await Users.findOne({ email: email });
+  if (!userFound) {
+    return res.json({
+      status: false,
+      message: "User Can't found",
+    });
+  }
   res.json({
-    status: true,
+    status: userFound,
   });
 };
-module.exports = { loginUser, forgetUser };
+module.exports = { createUser, loginUser, forgetUser };
